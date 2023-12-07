@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.107.1/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.107.1/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <style type="text/css">
+
+        #toggle-building {
+            z-index: 1;
+            position: fixed;
+            bottom: 5px;
+            left: 5px;
+        }
+
+        container {
+            margin: 0 auto;
+            min-height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer" class="fullSize"></div>
+
+    <div class="input-group">
+        <label for="building-id">Building ID:</label>
+        <input type="text" id="building-id" placeholder="Enter building ID">
+    </div>
+    <div class="input-group">
+        <label for="cesium-token">Cesium Token:</label>
+        <input type="text" id="cesium-token" placeholder="Enter Cesium Ion access token">
+    </div>
+    <div class="input-group">
+        <label for="google-maps-api-key">Google Maps API Key:</label>
+        <input type="text" id="google-maps-api-key" placeholder="Enter Google Maps API key">
+    </div>
+
+    <button id="toggle-building" class="btn btn-primary">Load Building</button>
+
+    <script type="module">
+
+        // Define variables for input elements
+        const buildingIdInput = document.getElementById('building-id');
+        const cesiumTokenInput = document.getElementById('cesium-token');
+        const googleMapsApiKeyInput = document.getElementById('google-maps-api-key');
+
+        // Button click event handler
+        document.getElementById('toggle-building').onclick = function () {
+            // Update building ID
+            const buildingID = parseInt(buildingIdInput.value);
+
+            // Update Cesium Ion access token
+            Cesium.Ion.defaultAccessToken = cesiumTokenInput.value;
+
+            // Update Google Maps tiles access token
+            Cesium.GoogleMaps.defaultApiKey = googleMapsApiKeyInput.value;
+
+            // Load the new building tileset
+            loadBuilding(buildingID);
+        };
+
+        // Function to load the building with specified ID
+        async function loadBuilding(buildingID) {
+            // Initialize the viewer with Cesium World Terrain.
+            const viewer = new Cesium.Viewer("cesiumContainer", {
+                timeline: false,
+                animation: true,
+                sceneModePicker: false,
+                baseLayerPicker: false,
+                shadows: false,
+                infoBox: false,
+                selectionIndicator: false,
+            });
+
+            // set lighting to true
+            viewer.scene.globe.enableLighting = true;
+
+            try {
+                // Add Photorealistic 3D Tiles
+                const tileset = await Cesium.createGooglePhotorealistic3DTileset();
+                viewer.scene.primitives.add(tileset);
+            } catch (error) {
+                console.log(`Error loading Photorealistic 3D Tiles tileset.
+           ${error}`);
+            }
+
+            // Add the 3D Tileset from user input
+            if (buildingID) {
+                const newBuildingTileset = await Cesium.Cesium3DTileset.fromIonAssetId(buildingID);
+                viewer.scene.primitives.add(newBuildingTileset);
+
+                // Move the camera to the new building
+                viewer.flyTo(newBuildingTileset);
+            }
+        }
+    </script>
+</body>
+</html>
